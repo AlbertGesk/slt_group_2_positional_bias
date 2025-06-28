@@ -1,39 +1,41 @@
 from pathlib import Path
-
 from loguru import logger
 from tqdm import tqdm
+from slt_positional_bias.config import PROCESSED_DATA_DIR, RAW_DATA_DIR
+from ir_datasets_subsample import register_subsamples
+
+import os
 import typer
 import zipfile
-
-from slt_positional_bias.config import PROCESSED_DATA_DIR, RAW_DATA_DIR
-app = typer.Typer()
-
-from ir_datasets_subsample import register_subsamples
 import ir_datasets
 
+app = typer.Typer()
+
+
 @app.command()
-def main(
-    # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
-    input_path: Path = RAW_DATA_DIR / "dataset.csv",
-    output_path: Path = PROCESSED_DATA_DIR / "dataset.csv",
-    # ----------------------------------------------
-):
-    input_zip_path = Path("../data/external/.ir_datasets/corpus-subsamples/inputs.zip")
-    input_output_dir = Path("../data/interim")
+def main():
 
-    with zipfile.ZipFile(input_zip_path, 'r') as zip_ref:
-        zip_ref.extractall(input_output_dir)
+    base = Path("../data")
+    dirs = ["external", "interim", "processed"]
+    for d in dirs:
+        (base / d).mkdir(parents=True, exist_ok=True)
 
-    logger.info("Registering IR subsamples...")
-    register_subsamples()
+    SCRIPT_DIR = Path(__file__).resolve().parent.parent
+    input_zip_path = SCRIPT_DIR / "data/raw/.ir_datasets/corpus-subsamples/inputs.zip"
+    input_output_dir = SCRIPT_DIR / "data/interim"
 
-    logger.info("Loading sub-sampled dataset...")
-    dataset = ir_datasets.load("../data/interim/inputs/corpus.jsonl")
+    if input_zip_path.exists():
+        logger.info("input.zip exists")
+        with zipfile.ZipFile(input_zip_path, 'r') as zip_ref:
+            zip_ref.extractall(input_output_dir)
+            logger.success("input.zip extracted")
+    else:
+        logger.error("input.zip missing in data/raw/.ir_datasets/corpus-subsamples")
 
-    logger.info("Iterating over documents...")
-    dataset.docs_iter()
+    # register_subsamples()
+    # dataset = ir_datasets.load("data/raw/.ir_datasets/corpus-subsamples/inputs.zip")
+    # dataset.docs_iter()
 
-    logger.success("Dataset processing complete.")
 
 if __name__ == "__main__":
     app()
