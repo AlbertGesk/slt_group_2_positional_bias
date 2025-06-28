@@ -3,6 +3,7 @@ from pathlib import Path
 from loguru import logger
 from tqdm import tqdm
 import typer
+import zipfile
 
 from slt_positional_bias.config import PROCESSED_DATA_DIR, RAW_DATA_DIR
 
@@ -16,14 +17,18 @@ def main(
     output_path: Path = PROCESSED_DATA_DIR / "dataset.csv",
     # ----------------------------------------------
 ):
-    # ---- REPLACE THIS WITH YOUR OWN CODE ----
-    logger.info("Processing dataset...")
-    for i in tqdm(range(10), total=10):
-        if i == 5:
-            logger.info("Something happened for iteration 5.")
-    logger.success("Processing dataset complete.")
-    # -----------------------------------------
+    input_zip_path = Path("../data/external/.ir_datasets/corpus-subsamples/inputs.zip")
+    input_output_dir = Path("../data/interim")
 
+    with zipfile.ZipFile(input_zip_path, 'r') as zip_ref:
+        zip_ref.extractall(input_output_dir)
+
+    # from ir_datasets_subsample import register_subsamples
+    # import ir_datasets
+    #
+    # register_subsamples()
+    # dataset = ir_datasets.load("corpus-subsamples/inputs/corpus.json/corpus.json")
+    # dataset.docs.iter()
 
 if __name__ == "__main__":
     app()
