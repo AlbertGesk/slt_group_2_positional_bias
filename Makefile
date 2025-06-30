@@ -54,7 +54,12 @@ create_environment:
 	@echo ">>> New virtualenv created. Activate with:\nworkon $(PROJECT_NAME)"
 	
 
-
+## Install Jupyter in the current environment (venv)
+.PHONY: jupyter
+jupyter:
+	$(PYTHON_INTERPRETER) -m pip install notebook ipykernel
+	$(PYTHON_INTERPRETER) -m ipykernel install --user --name=$(PROJECT_NAME) --display-name="slt_group_2_positional_bias Kernel"
+	@echo "\n>>> Jupyter installed and kernel registered as $(PROJECT_NAME) Kernel"
 
 #################################################################################
 # PROJECT RULES                                                                 #

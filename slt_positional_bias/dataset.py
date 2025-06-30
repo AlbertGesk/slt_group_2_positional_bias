@@ -33,9 +33,10 @@ def main():
         logger.error("input.zip missing in data/raw/.ir_datasets/corpus-subsamples")
 
     # register_subsamples()
-    # dataset = ir_datasets.load("data/raw/.ir_datasets/corpus-subsamples/inputs.zip")
+    # dataset = ir_datasets.load("data/interim/inputs/corpus")
     # dataset.docs_iter()
 
+    print(list(ir_datasets.registry))
 
 if __name__ == "__main__":
     app()
