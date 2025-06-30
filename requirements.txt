@@ -1,5 +1,6 @@
 ipython
 jupyterlab
+ipykernel
 loguru
 matplotlib
 mkdocs
