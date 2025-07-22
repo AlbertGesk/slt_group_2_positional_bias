@@ -26,18 +26,23 @@ def generate_merged_data_frame():
         .merge(
             df_topics.loc[:, ["topic_id", "topic"]],
             on="topic_id",
-            how="left"
+            how="inner"
         )
         .merge(
             df_docs.loc[:, ["doc_id", "doc"]],
             on="doc_id",
-            how="left"
+            how="inner"
         )
     )
 
-    df_merged = df_merged.dropna(subset=["topic_id", "doc_id"])
+    df = df_merged[df_merged["doc_id"].duplicated(keep=False) == False]
+    df = df.dropna()
 
-    return df_merged
+    logger.info(f"df column 'doc_id' is unique: {df["doc_id"].is_unique}")
+    logger.info(f"df contains NaN: {df.isna().any().any()}")
+
+
+    return df
 
 def generate_data_frame(f_path: str):
 
