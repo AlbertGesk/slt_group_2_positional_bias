@@ -7,8 +7,37 @@ import zipfile
 import pandas as pd
 from pathlib import Path
 
+from numpy import integer
 
 app = typer.Typer()
+
+def sort_data_frame(df: pd.DataFrame, nr_rel_3: int, nr_rel_0: int) -> pd.DataFrame:
+    # Group by topic_ids
+    groups = df.groupby("topic_id", group_keys=False)
+
+    # List of topic_ids with count(rel_scoring==0) < nr_rel_0 && count(rel_scoring==3) < nr_rel_3
+    valid_topic_ids = [
+        topic for topic, group in groups
+        if (group["rel_scoring"] == 0).sum() >= nr_rel_0 and (group["rel_scoring"] == 3).sum() >= nr_rel_3
+    ]
+
+    # Include only topic_id entries that fulfils the filter's condition
+    df_filtered = df[df["topic_id"].isin(valid_topic_ids)]
+
+    # Group by filtered topic_ids
+    grouped = df_filtered.groupby("topic_id", group_keys=False)
+
+    # Cut off excess entries
+    df_filtered_rel = grouped.apply(
+        lambda g: pd.concat([
+            g[g["rel_scoring"] == 0].head(36),
+            g[g["rel_scoring"] == 3].head(4)
+        ])
+    )
+
+    df_filtered_rel = df_filtered_rel.reset_index(drop=True)
+
+    return df_filtered_rel
 
 def generate_merged_data_frame():
     df_docs = generate_data_frame("data/interim/inputs/corpus.jsonl")
@@ -40,7 +69,6 @@ def generate_merged_data_frame():
 
     logger.info(f"df column 'doc_id' is unique: {df["doc_id"].is_unique}")
     logger.info(f"df contains NaN: {df.isna().any().any()}")
-
 
     return df
 
