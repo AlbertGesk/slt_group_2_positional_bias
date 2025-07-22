@@ -55,7 +55,6 @@ create_environment:
 	
 
 
-
 #################################################################################
 # PROJECT RULES                                                                 #
 #################################################################################
@@ -65,6 +64,14 @@ create_environment:
 .PHONY: data
 data: requirements
 	$(PYTHON_INTERPRETER) slt_positional_bias/dataset.py
+
+
+## Install Jupyter in the current environment (venv)
+.PHONY: jupyter
+jupyter: requirements
+	$(PYTHON_INTERPRETER) -m pip install notebook ipykernel
+	$(PYTHON_INTERPRETER) -m ipykernel install --user --name=$(PROJECT_NAME) --display-name="slt_group_2_positional_bias Kernel"
+	@echo "\n>>> Jupyter installed and kernel registered as $(PROJECT_NAME) Kernel"
 
 
 #################################################################################
