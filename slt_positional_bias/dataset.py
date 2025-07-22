@@ -15,26 +15,28 @@ def generate_merged_data_frame():
     df_topics = generate_data_frame("data/interim/inputs/queries.jsonl")
     df_qrels = generate_data_frame("data/interim/inputs/qrels.rag24.test-umbrela-all.txt")
 
-    df_qrels.columns = ["qid", "q0", "doc_id", "rel"]
+    df_qrels.columns = ["topic_id", "q0", "doc_id", "rel_scoring"]
 
-    df_topics = df_topics.rename(columns={"query": "text"})
-    df_qrels = df_qrels.rename(columns={"topic_id": "qid", "scoring": "rel"})
-    df_docs = df_docs.rename(columns={"docno": "doc_id"})
+    df_topics = df_topics.rename(columns={"qid": "topic_id","query": "topic"})
+    df_docs = df_docs.rename(columns={"docno": "doc_id", "text": "doc"})
 
     df_merged = (
         df_qrels
-        .loc[:, ["qid", "doc_id", "rel"]]
+        .loc[:, ["topic_id", "doc_id", "rel_scoring"]]
         .merge(
-            df_topics.loc[:, ["qid", "text"]],
-            on="qid",
+            df_topics.loc[:, ["topic_id", "topic"]],
+            on="topic_id",
             how="left"
         )
         .merge(
-            df_docs.loc[:, ["doc_id", "text"]],
+            df_docs.loc[:, ["doc_id", "doc"]],
             on="doc_id",
             how="left"
         )
     )
+
+    df_merged = df_merged.dropna(subset=["topic_id", "doc_id"])
+
     return df_merged
 
 def generate_data_frame(f_path: str):
