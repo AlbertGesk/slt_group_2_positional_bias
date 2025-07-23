@@ -7,35 +7,70 @@ import zipfile
 import pandas as pd
 from pathlib import Path
 
+from numpy import integer
 
 app = typer.Typer()
+
+def sort_data_frame(df: pd.DataFrame, nr_rel_3: int, nr_rel_0: int) -> pd.DataFrame:
+    # Group by topic_ids
+    groups = df.groupby("topic_id", group_keys=False)
+
+    # List of topic_ids with count(rel_scoring==0) < nr_rel_0 && count(rel_scoring==3) < nr_rel_3
+    valid_topic_ids = [
+        topic for topic, group in groups
+        if (group["rel_scoring"] == 0).sum() >= nr_rel_0 and (group["rel_scoring"] == 3).sum() >= nr_rel_3
+    ]
+
+    # Include only topic_id entries that fulfils the filter's condition
+    df_filtered = df[df["topic_id"].isin(valid_topic_ids)]
+
+    # Group by filtered topic_ids
+    grouped = df_filtered.groupby("topic_id", group_keys=False)
+
+    # Cut off excess entries
+    df_filtered_rel = grouped.apply(
+        lambda g: pd.concat([
+            g[g["rel_scoring"] == 0].head(36),
+            g[g["rel_scoring"] == 3].head(4)
+        ])
+    )
+
+    df_filtered_rel = df_filtered_rel.reset_index(drop=True)
+
+    return df_filtered_rel
 
 def generate_merged_data_frame():
     df_docs = generate_data_frame("data/interim/inputs/corpus.jsonl")
     df_topics = generate_data_frame("data/interim/inputs/queries.jsonl")
     df_qrels = generate_data_frame("data/interim/inputs/qrels.rag24.test-umbrela-all.txt")
 
-    df_qrels.columns = ["qid", "q0", "doc_id", "rel"]
+    df_qrels.columns = ["topic_id", "q0", "doc_id", "rel_scoring"]
 
-    df_topics = df_topics.rename(columns={"query": "text"})
-    df_qrels = df_qrels.rename(columns={"topic_id": "qid", "scoring": "rel"})
-    df_docs = df_docs.rename(columns={"docno": "doc_id"})
+    df_topics = df_topics.rename(columns={"qid": "topic_id","query": "topic"})
+    df_docs = df_docs.rename(columns={"docno": "doc_id", "text": "doc"})
 
     df_merged = (
         df_qrels
-        .loc[:, ["qid", "doc_id", "rel"]]
+        .loc[:, ["topic_id", "doc_id", "rel_scoring"]]
         .merge(
-            df_topics.loc[:, ["qid", "text"]],
-            on="qid",
-            how="left"
+            df_topics.loc[:, ["topic_id", "topic"]],
+            on="topic_id",
+            how="inner"
         )
         .merge(
-            df_docs.loc[:, ["doc_id", "text"]],
+            df_docs.loc[:, ["doc_id", "doc"]],
             on="doc_id",
-            how="left"
+            how="inner"
         )
     )
-    return df_merged
+
+    df = df_merged[df_merged["doc_id"].duplicated(keep=False) == False]
+    df = df.dropna()
+
+    logger.info(f"df column 'doc_id' is unique: {df["doc_id"].is_unique}")
+    logger.info(f"df contains NaN: {df.isna().any().any()}")
+
+    return df
 
 def generate_data_frame(f_path: str):
 
