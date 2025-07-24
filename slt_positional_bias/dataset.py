@@ -72,6 +72,20 @@ def generate_merged_data_frame():
 
     return df
 
+def store_df_as_parquet(df: pd.DataFrame, file_name: str):
+    SCRIPT_DIR = Path(__file__).resolve().parent.parent
+    f_path = f"data/processed/{file_name}.parquet"
+    f_path_from_dir = SCRIPT_DIR / f_path
+    df.to_parquet(f_path_from_dir)
+
+def load_parquet_as_df(file_name: str) -> pd.DataFrame:
+    SCRIPT_DIR = Path(__file__).resolve().parent.parent
+    f_path = f"data/processed/{file_name}.parquet"
+    f_path_from_dir = SCRIPT_DIR / f_path
+    df = pd.read_parquet(f_path_from_dir)
+
+    return df
+
 def generate_data_frame(f_path: str):
 
     # convert json or txt files to pandas data frame
