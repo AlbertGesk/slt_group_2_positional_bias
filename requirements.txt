@@ -15,4 +15,5 @@ scikit-learn
 tqdm
 typer
 numpy
+pyarrow
 -e .
