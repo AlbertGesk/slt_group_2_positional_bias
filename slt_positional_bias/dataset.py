@@ -74,9 +74,19 @@ def generate_merged_data_frame():
 
 def store_df_as_parquet(df: pd.DataFrame, file_name: str):
     SCRIPT_DIR = Path(__file__).resolve().parent.parent
-    f_path = f"data/processed/{file_name}.parquet"
-    f_path_from_dir = SCRIPT_DIR / f_path
-    df.to_parquet(f_path_from_dir)
+    f_path_from_dir = SCRIPT_DIR / "data/processed"
+
+    name = f"{file_name}1.parquet"
+    path = f_path_from_dir / name
+
+    counter = 1
+    while path.exists():
+        name = f"{file_name}{counter}.parquet"
+        path = f_path_from_dir / name
+        counter += 1
+
+    df.to_parquet(path)
+    logger.info(f"Data frame saved to {path}")
 
 def load_parquet_as_df(file_name: str) -> pd.DataFrame:
     SCRIPT_DIR = Path(__file__).resolve().parent.parent
