@@ -1,8 +1,8 @@
 from pathlib import Path
-
 from loguru import logger
 from tqdm import tqdm
 import typer
+import matplotlib.pyplot as plt
 
 from slt_positional_bias.config import FIGURES_DIR, PROCESSED_DATA_DIR
 
@@ -10,6 +10,14 @@ app = typer.Typer()
 
 
 @app.command()
+
+
+def savefig(plt, plt_name, df_name, dpi):
+    SCRIPT_DIR = Path(__file__).resolve().parent.parent
+    f_path_from_dir = SCRIPT_DIR / "reports/figures" / f"{plt_name}-{df_name}.png"
+
+    plt.savefig(f_path_from_dir, dpi=dpi)
+
 def main(
     # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
     input_path: Path = PROCESSED_DATA_DIR / "dataset.csv",
