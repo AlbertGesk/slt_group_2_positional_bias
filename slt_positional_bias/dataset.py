@@ -1,15 +1,35 @@
 from pathlib import Path
 from loguru import logger
 from io import StringIO
+from pathlib import Path
+from numpy import integer
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
 
 import typer
 import zipfile
 import pandas as pd
-from pathlib import Path
+import re
+import nltk
 
-from numpy import integer
+nltk.download('stopwords')
+stop_words = set(stopwords.words('english'))
+stemmer = PorterStemmer()
 
 app = typer.Typer()
+
+def normalize_and_tokenize(text):
+    text = text.lower()
+    text = re.sub(r'[^\w\s]', '', text)
+    text = ' '.join(text.split())
+    words = text.split()
+    words = [stemmer.stem(word) for word in words if word not in stop_words]
+    return set(words)
+
+def jaccard(input_1, input_2):
+    set_1 = normalize_and_tokenize(input_1)
+    set_2 = normalize_and_tokenize(input_2)
+    return len(set_1 & set_2) / len(set_1 | set_2) if set_1 | set_2 else 0.0
 
 def sort_data_frame(df: pd.DataFrame, nr_rel_3: int, nr_rel_0: int) -> pd.DataFrame:
     # Group by topic_ids
@@ -76,12 +96,13 @@ def store_df_as_parquet(df: pd.DataFrame, file_name: str):
     SCRIPT_DIR = Path(__file__).resolve().parent.parent
     f_path_from_dir = SCRIPT_DIR / "data/processed"
 
-    name = f"{file_name}1.parquet"
+    timestamp = pd.Timestamp.now().strftime('%Y-%m-%d %Hh-%Mm-%Ss')
+    name = f"{file_name}-1-{timestamp}.parquet"
     path = f_path_from_dir / name
 
     counter = 1
     while path.exists():
-        name = f"{file_name}{counter}.parquet"
+        name = f"{file_name}-{counter}-{timestamp}.parquet"
         path = f_path_from_dir / name
         counter += 1
 
@@ -120,9 +141,6 @@ def generate_data_frame(f_path: str):
 
     else:
         logger.error(f"file path '{f_path_from_dir}' doesn't exist")
-
-
-
 
 @app.command()
 def main():
