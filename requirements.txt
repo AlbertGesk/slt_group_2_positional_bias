@@ -16,4 +16,7 @@ tqdm
 typer
 numpy
 pyarrow
+openai
+seaborn
+nltk
 -e .
