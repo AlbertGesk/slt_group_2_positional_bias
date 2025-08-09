@@ -5,6 +5,7 @@ from pathlib import Path
 from numpy import integer
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
+from scipy.stats import spearmanr
 
 import typer
 import zipfile
@@ -18,6 +19,14 @@ stemmer = PorterStemmer()
 
 app = typer.Typer()
 
+def normalize_and_tokenize_list(text):
+    text = text.lower()
+    text = re.sub(r'[^\w\s]', '', text)
+    text = ' '.join(text.split())
+    words = text.split()
+    words = [stemmer.stem(word) for word in words if word not in stop_words]
+    return words
+
 def normalize_and_tokenize(text):
     text = text.lower()
     text = re.sub(r'[^\w\s]', '', text)
@@ -26,9 +35,23 @@ def normalize_and_tokenize(text):
     words = [stemmer.stem(word) for word in words if word not in stop_words]
     return set(words)
 
-def jaccard(input_1, input_2):
-    set_1 = normalize_and_tokenize(input_1)
-    set_2 = normalize_and_tokenize(input_2)
+def spearman_word_order_correlation(oracle, answer):
+    oracle_tokenized = normalize_and_tokenize_list(oracle)
+    answer_tokenized = normalize_and_tokenize_list(answer)
+
+    intersection = set(oracle_tokenized) & set(answer_tokenized)
+    if len(intersection) < 2:
+        return None, None
+
+    oracle_ranks = [oracle_tokenized.index(word) for word in intersection]
+    answer_ranks = [answer_tokenized.index(word) for word in intersection]
+
+    coef, p = spearmanr(oracle_ranks, answer_ranks)
+    return coef, p
+
+def jaccard(oracle, answer):
+    set_1 = normalize_and_tokenize(oracle)
+    set_2 = normalize_and_tokenize(answer)
     return len(set_1 & set_2) / len(set_1 | set_2) if set_1 | set_2 else 0.0
 
 def sort_data_frame(df: pd.DataFrame, nr_rel_3: int, nr_rel_0: int) -> pd.DataFrame:
