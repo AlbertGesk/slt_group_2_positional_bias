@@ -73,8 +73,8 @@ def sort_data_frame(df: pd.DataFrame, nr_rel_3: int, nr_rel_0: int) -> pd.DataFr
     # Cut off excess entries
     df_filtered_rel = grouped.apply(
         lambda g: pd.concat([
-            g[g["rel_scoring"] == 0].head(36),
-            g[g["rel_scoring"] == 3].head(4)
+            g[g["rel_scoring"] == 0].head(nr_rel_0),
+            g[g["rel_scoring"] == 3].head(nr_rel_3)
         ])
     )
 
