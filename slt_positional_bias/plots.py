@@ -11,6 +11,11 @@ app = typer.Typer()
 
 @app.command()
 
+def savetable(df, table_name, df_name):
+    SCRIPT_DIR = Path(__file__).resolve().parent.parent
+    f_path_from_dir = SCRIPT_DIR / "reports/tables" / f"{table_name}-{df_name}.csv"
+    
+    df.to_csv(f_path_from_dir)
 
 def savefig(plt, plt_name, df_name, dpi):
     SCRIPT_DIR = Path(__file__).resolve().parent.parent
