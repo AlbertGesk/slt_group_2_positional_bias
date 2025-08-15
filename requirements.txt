@@ -12,7 +12,7 @@ pytest~=8.4.1
 python-dotenv~=1.1.1
 ruff
 scikit-learn
-scipy
+scipy~=1.16.0
 tqdm~=4.67.1
 typer~=0.16.0
 numpy
@@ -20,6 +20,9 @@ pyarrow
 openai
 seaborn
 nltk~=3.9.1
+evaluate~=0.4.5
+sacrebleu
 -e .
 
 slt_positional_bias~=0.0.1
+streamlit~=1.48.0
