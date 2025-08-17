@@ -1,0 +1,6 @@
+Position of Oracle	Spearman Correlation Coefficient	Spearman p-value
+1	0.446665	0.195120
+10	0.442623	0.219916
+20	0.490197	0.184800
+30	0.455421	0.239933
+40	0.417544	0.158660
