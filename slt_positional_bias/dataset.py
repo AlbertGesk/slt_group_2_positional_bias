@@ -13,6 +13,9 @@ import pandas as pd
 import re
 import nltk
 
+from slt_positional_bias.features import sacrebleu_corpus, rouge_corpus, meteor_corpus, bertscore_corpus
+from slt_positional_bias.plots import export_table_txt
+
 nltk.download('stopwords')
 stop_words = set(stopwords.words('english'))
 stemmer = PorterStemmer()
@@ -20,6 +23,83 @@ stemmer = PorterStemmer()
 app = typer.Typer()
 
 
+
+
+def calc_metric(dfs, indexed: bool, normalized: bool):
+    new_dfs = {}
+
+    for name, d in dfs.items():
+        nd = d.copy()
+        nd.rename(columns={'rel_3_doc_position': 'Position of Oracle', 'nr_rel_0_doc': 'Number of Documents', 'oracle': 'references', 'answer': 'predictions'}, inplace=True)
+        nd.drop(columns=['nr_rel_3_doc'], inplace=True)
+        nd['Position of Oracle'] = nd['Position of Oracle'] + 1
+        nd['Number of Documents'] = nd['Number of Documents'] + 1
+
+        nd['Jaccard Coefficient'] = nd.apply(
+            lambda row: jaccard(row['predictions'], row['references']), axis=1
+        )
+        nd[['Spearman Correlation Coefficient', 'Spearman p-value']] = nd.apply(
+            lambda row: pd.Series(spearman_word_order_correlation(row['predictions'], row['references'])), axis=1
+        )
+        nd['SacreBLEU'] = nd.apply(
+            lambda row: pd.Series(sacrebleu_corpus(row['predictions'], row['references'])), axis=1
+        )
+        nd['ROUGE_1', 'ROUGE_2', 'ROUGE_L', 'ROUGE_Lsum'] = nd.apply(
+            lambda row: pd.Series(rouge_corpus(row['predictions'], row['references'])), axis=1
+        )
+        nd['METEOR'] = nd.apply(
+            lambda row: pd.Series(meteor_corpus(row['predictions'], row['references'])), axis=1
+        )
+        nd[["BERTScore-Precision", "BERTScore-Recall", "BERTScore-F1"]] = nd.apply(
+            lambda row: pd.Series(bertscore_corpus(row['predictions'], row['references'])), axis=1
+        )
+
+        new_dfs[f'n{name}'] = nd
+
+    dfs_jaccard = {}
+    dfs_spearman = {}
+    dfs_bleu = {}
+    dfs_rouge = {}
+    dfs_meteor = {}
+    dfs_berts = {}
+
+    for name, d in new_dfs.items():
+        df_jaccard = d.groupby('Position of Oracle')[['Jaccard Coefficient']].mean().reset_index()
+        df_spearman = d.groupby('Position of Oracle')[['Spearman Correlation Coefficient', 'Spearman p-value']].mean().reset_index()
+        df_bleu = d.groupby('Position of Oracle')[['SacreBLEU']].mean().reset_index()
+        df_rouge = d.groupby('Position of Oracle')[['ROUGE_1', 'ROUGE_2', 'ROUGE_L', 'ROUGE_Lsum']].mean().reset_index()
+        df_meteor = d.groupby('Position of Oracle')[['METEOR']].mean().reset_index()
+        df_berts = d.groupby('Position of Oracle')[['BERTScore-Precision', 'BERTScore-Recall', 'BERTScore-F1']].mean().reset_index()
+
+        if normalized:
+            dfs_jaccard[f'Norm-{name}_jaccard'] = df_jaccard
+            dfs_spearman[f'Norm-{name}_spearman'] = df_spearman
+            dfs_bleu[f'Norm-{name}_bleu'] = df_bleu
+            dfs_rouge[f'Norm-{name}_rouge'] = df_rouge
+            dfs_meteor[f'Norm-{name}_meteor'] = df_meteor
+            dfs_berts[f'Norm-{name}_berts'] = df_berts
+        else:
+            dfs_jaccard[f'{name}_jaccard'] = df_jaccard
+            dfs_spearman[f'{name}_spearman'] = df_spearman
+            dfs_bleu[f'{name}_bleu'] = df_bleu
+            dfs_rouge[f'{name}_rouge'] = df_rouge
+            dfs_meteor[f'{name}_meteor'] = df_meteor
+            dfs_berts[f'{name}_berts'] = df_berts
+
+    for dfs in [dfs_jaccard, dfs_spearman, dfs_bleu, dfs_rouge, dfs_meteor, dfs_berts]:
+        for name, d in dfs.items():
+            if dfs == dfs_jaccard:
+                export_table_txt(d, "Jaccard Coefficient", f"{name}", indexed, normalized)
+            if dfs == dfs_spearman:
+                export_table_txt(d, "Spearman Correlation Coefficient", f"{name}", indexed, normalized)
+            if dfs == dfs_bleu:
+                export_table_txt(d, "SacreBLEU", f"{name}", indexed, normalized)
+            if dfs == dfs_rouge:
+                export_table_txt(d, "ROUGE", f"{name}", indexed, normalized)
+            if dfs == dfs_meteor:
+                export_table_txt(d, "METEOR", f"{name}", indexed, normalized)
+            if dfs == dfs_berts:
+                export_table_txt(d, "BERTScore", f"{name}", indexed, normalized)
 
 
 def normalize_and_tokenize_list(text):
@@ -118,7 +198,7 @@ def generate_merged_data_frame():
 
     return df
 
-def store_df_as_parquet(df: pd.DataFrame, file_name: str):
+def store_df_as_parquet_time(df: pd.DataFrame, file_name: str):
     SCRIPT_DIR = Path(__file__).resolve().parent.parent
     f_path_from_dir = SCRIPT_DIR / "data/processed"
 
@@ -134,6 +214,21 @@ def store_df_as_parquet(df: pd.DataFrame, file_name: str):
 
     df.to_parquet(path)
     logger.info(f"Data frame saved to {path}")
+    
+def store_df_as_parquet(df: pd.DataFrame, file_name: str):
+    SCRIPT_DIR = Path(__file__).resolve().parent.parent
+    f_path_from_dir = SCRIPT_DIR / "data/processed"
+
+    timestamp = pd.Timestamp.now().strftime('%Y-%m-%d %Hh-%Mm-%Ss')
+    name = f"{file_name}.parquet"
+    path = f_path_from_dir / name
+
+    while path.exists():
+        name = f"{file_name}.parquet"
+        path = f_path_from_dir / name
+
+    df.to_parquet(path)
+    logger.info(f"Data frame saved to {path}")
 
 def load_parquet_as_df(file_name: str) -> pd.DataFrame:
     SCRIPT_DIR = Path(__file__).resolve().parent.parent
@@ -142,6 +237,11 @@ def load_parquet_as_df(file_name: str) -> pd.DataFrame:
     df = pd.read_parquet(f_path_from_dir)
 
     return df
+
+def load_and_sort_data(start: int = 1, end: int = 39) -> pd.DataFrame:
+    df = generate_merged_data_frame()
+    df_sorted = sort_data_frame(df, start, end)
+    return df_sorted
 
 def generate_data_frame(f_path: str):
 

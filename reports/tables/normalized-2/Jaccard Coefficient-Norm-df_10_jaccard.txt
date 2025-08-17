@@ -1,6 +1,0 @@
-Position of Oracle	Jaccard Coefficient
-0.00	0.33
-0.25	0.33
-0.50	0.31
-0.75	0.29
-1.00	0.29
