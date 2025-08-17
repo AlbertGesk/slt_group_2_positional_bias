@@ -1,23 +1,7 @@
-from loguru import logger
 from openai import OpenAI
-from slt_positional_bias.dataset import load_and_sort_data
+from slt_positional_bias.dataset import load_and_sort_data, calc_metric
 from slt_positional_bias.features import shorten_documents
 from slt_positional_bias.modeling.predict import run_pipeline
-
-import pandas as pd
-from dotenv.parser import Position
-
-from slt_positional_bias.dataset import generate_merged_data_frame, sort_data_frame, store_df_as_parquet, load_parquet_as_df, normalize_and_tokenize, jaccard, spearman_word_order_correlation
-
-from slt_positional_bias.plots import savetable
-from slt_positional_bias.features import sacrebleu_corpus, rouge_corpus, meteor_corpus, bertscore_corpus
-import pandas as pd
-from dotenv.parser import Position
-
-from slt_positional_bias.dataset import generate_merged_data_frame, sort_data_frame, store_df_as_parquet, load_parquet_as_df, normalize_and_tokenize, jaccard, spearman_word_order_correlation, calc_metric
-
-from slt_positional_bias.plots import savetable, export_table_txt
-from slt_positional_bias.features import sacrebleu_corpus, rouge_corpus, meteor_corpus, bertscore_corpus
 
 API_KEY = "glpat-r_ZnnQU3cwc59xQ7M2XP"
 API_URL = "https://api.helmholtz-blablador.fz-juelich.de/v1/"
