@@ -118,7 +118,7 @@ def generate_merged_data_frame():
 
     return df
 
-def store_df_as_parquet(df: pd.DataFrame, file_name: str):
+def store_df_as_parquet_time(df: pd.DataFrame, file_name: str):
     SCRIPT_DIR = Path(__file__).resolve().parent.parent
     f_path_from_dir = SCRIPT_DIR / "data/processed"
 
@@ -134,6 +134,21 @@ def store_df_as_parquet(df: pd.DataFrame, file_name: str):
 
     df.to_parquet(path)
     logger.info(f"Data frame saved to {path}")
+    
+def store_df_as_parquet(df: pd.DataFrame, file_name: str):
+    SCRIPT_DIR = Path(__file__).resolve().parent.parent
+    f_path_from_dir = SCRIPT_DIR / "data/processed"
+
+    timestamp = pd.Timestamp.now().strftime('%Y-%m-%d %Hh-%Mm-%Ss')
+    name = f"{file_name}.parquet"
+    path = f_path_from_dir / name
+
+    while path.exists():
+        name = f"{file_name}.parquet"
+        path = f_path_from_dir / name
+
+    df.to_parquet(path)
+    logger.info(f"Data frame saved to {path}")
 
 def load_parquet_as_df(file_name: str) -> pd.DataFrame:
     SCRIPT_DIR = Path(__file__).resolve().parent.parent
@@ -142,6 +157,11 @@ def load_parquet_as_df(file_name: str) -> pd.DataFrame:
     df = pd.read_parquet(f_path_from_dir)
 
     return df
+
+def load_and_sort_data(start: int = 1, end: int = 39) -> pd.DataFrame:
+    df = generate_merged_data_frame()
+    df_sorted = sort_data_frame(df, start, end)
+    return df_sorted
 
 def generate_data_frame(f_path: str):
 
